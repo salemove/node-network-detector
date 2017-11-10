@@ -2,3 +2,5 @@ package: github.com/salemove/node-network-detector
 import:
 - package: k8s.io/client-go
   version: v5.0.1
+- package: github.com/sirupsen/logrus
+  version: 33a34430d1c3dc71777fdd677864928e5b5812bc
