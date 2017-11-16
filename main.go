@@ -36,6 +36,12 @@ func setupLogger() {
 	} else {
 		log.SetLevel(log.InfoLevel)
 	}
-
-	log.SetFormatter(&log.JSONFormatter{})
+	formatter := &log.JSONFormatter{
+		FieldMap: log.FieldMap{
+			log.FieldKeyTime:  "@timestamp",
+			log.FieldKeyLevel: "level",
+			log.FieldKeyMsg:   "message",
+		},
+	}
+	log.SetFormatter(formatter)
 }
