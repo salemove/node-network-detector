@@ -1,8 +1,12 @@
 hash: b0a05eca247acf84310610adfbd275bd28a7b27caf08d159f01b66f29853acd8
-updated: 2017-11-15T15:09:21.10821675+02:00
+updated: 2017-11-28T15:52:17.986614892+02:00
 imports:
 - name: github.com/bastjan/go-ping
   version: 2bf06a4fdca1bd125fd9f1206dc552dff1fed690
+- name: github.com/DataDog/datadog-go
+  version: 4d2e5696ebe914940bd7459d2266fb7d555ea1b7
+  subpackages:
+  - statsd
 - name: github.com/davecgh/go-spew
   version: 782f4967f2dc4564575ca782fe2d04090b5faca8
   subpackages:

@@ -8,6 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	// Using bastjan fork because sparrc has not applied
 	// https://github.com/sparrc/go-ping/pull/15 and other useful fixes yet
+	statsd "github.com/DataDog/datadog-go/statsd"
 	ping "github.com/bastjan/go-ping"
 )
 
@@ -15,13 +16,15 @@ type NodePinger struct {
 	Nodes        []string
 	PingTimeout  time.Duration
 	PingInterval time.Duration
+	StatsD       statsd.Client
 }
 
-func NewNodePinger(pingTimeout time.Duration, pingInterval time.Duration) *NodePinger {
+func NewNodePinger(pingTimeout time.Duration, pingInterval time.Duration, statsdClient statsd.Client) *NodePinger {
 	pinger := NodePinger{
 		Nodes:        make([]string, 0),
 		PingTimeout:  pingTimeout,
 		PingInterval: pingInterval,
+		StatsD:       statsdClient,
 	}
 	return &pinger
 }
@@ -34,7 +37,7 @@ func (p *NodePinger) Start() {
 		wg.Add(len(p.Nodes))
 
 		for _, ip := range p.Nodes {
-			go pingNode(&wg, ip, p.PingTimeout)
+			go p.pingNode(&wg, ip)
 		}
 
 		wg.Wait()
@@ -43,7 +46,7 @@ func (p *NodePinger) Start() {
 	}
 }
 
-func pingNode(wg *sync.WaitGroup, ip string, timeout time.Duration) {
+func (p *NodePinger) pingNode(wg *sync.WaitGroup, ip string) {
 	defer wg.Done()
 
 	log.Debugf("Pinging node %s", ip)
@@ -57,7 +60,7 @@ func pingNode(wg *sync.WaitGroup, ip string, timeout time.Duration) {
 
 	pinger.SetPrivileged(true)
 	pinger.Count = 1
-	pinger.Timeout = timeout
+	pinger.Timeout = p.PingTimeout
 	pinger.Run()
 
 	stats := pinger.Statistics()
@@ -65,7 +68,10 @@ func pingNode(wg *sync.WaitGroup, ip string, timeout time.Duration) {
 
 	if stats.PacketLoss > 0 || stats.PacketsRecv == 0 || stats.PacketsSent == 0 {
 		log.Warnf("Unable to reach %s, %+v", ip, stats)
-	} else if stats.AvgRtt > (500 * time.Millisecond) {
-		log.Warnf("Slow ping %s, %+v", ip, stats)
+	} else {
+		tags := []string{
+			"target:" + ip,
+		}
+		p.StatsD.Timing("sm.node-network-detector.ping.duration", stats.AvgRtt, tags, 1)
 	}
 }
