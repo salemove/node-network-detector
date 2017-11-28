@@ -65,5 +65,7 @@ func pingNode(wg *sync.WaitGroup, ip string, timeout time.Duration) {
 
 	if stats.PacketLoss > 0 || stats.PacketsRecv == 0 || stats.PacketsSent == 0 {
 		log.Warnf("Unable to reach %s, %+v", ip, stats)
+	} else if stats.AvgRtt > (500 * time.Millisecond) {
+		log.Warnf("Slow ping %s, %+v", ip, stats)
 	}
 }
